@@ -1,12 +1,17 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
-import sqlite3
+import os
+import psycopg
+from psycopg.rows import dict_row
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from pathlib import Path
 app = Flask(__name__)
 app.secret_key = "blogger-change-this-secret-key"
 
-DATABASE = "blogger.db"
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL environment variable is not set.")
 
 
 
@@ -50,8 +55,7 @@ PLANS = {
 }
 
 def get_db():
-    conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row
+    conn = psycopg.connect(DATABASE_URL, row_factory=dict_row)
     return conn
 
 
@@ -60,13 +64,14 @@ def init_db():
 
     db.execute("""
         CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             fullname TEXT NOT NULL,
             username TEXT NOT NULL UNIQUE,
             email TEXT NOT NULL UNIQUE,
             password TEXT NOT NULL,
             referral_code TEXT NOT NULL UNIQUE,
-            balance REAL NOT NULL DEFAULT 700,
+            referred_by INTEGER,
+            balance DOUBLE PRECISION NOT NULL DEFAULT 700,
             is_admin INTEGER NOT NULL DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
@@ -74,12 +79,12 @@ def init_db():
 
     db.execute("""
         CREATE TABLE IF NOT EXISTS user_plans (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             user_id INTEGER NOT NULL,
             plan_id TEXT NOT NULL,
             plan_name TEXT NOT NULL,
-            amount REAL NOT NULL,
-            daily_amount REAL NOT NULL,
+            amount DOUBLE PRECISION NOT NULL,
+            daily_amount DOUBLE PRECISION NOT NULL,
             status TEXT NOT NULL DEFAULT 'Active',
             activated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id)
@@ -88,9 +93,9 @@ def init_db():
 
     db.execute("""
         CREATE TABLE IF NOT EXISTS daily_bonuses (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             user_id INTEGER NOT NULL,
-            amount REAL NOT NULL DEFAULT 50,
+            amount DOUBLE PRECISION NOT NULL DEFAULT 50,
             claimed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id)
         )
@@ -98,9 +103,9 @@ def init_db():
 
     db.execute("""
         CREATE TABLE IF NOT EXISTS deposits (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             user_id INTEGER NOT NULL,
-            amount REAL NOT NULL,
+            amount DOUBLE PRECISION NOT NULL,
             payment_method TEXT NOT NULL,
             payment_name TEXT NOT NULL,
             screenshot TEXT NOT NULL,
@@ -114,9 +119,9 @@ def init_db():
 
     db.execute("""
         CREATE TABLE IF NOT EXISTS withdrawals (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             user_id INTEGER NOT NULL,
-            amount REAL NOT NULL,
+            amount DOUBLE PRECISION NOT NULL,
             method TEXT NOT NULL DEFAULT 'Bank Transfer',
             account_name TEXT NOT NULL,
             account_number TEXT NOT NULL,
@@ -133,13 +138,20 @@ def init_db():
 # Add admin flag to existing users table if needed
 def ensure_admin_column():
     db = get_db()
-    columns = db.execute("PRAGMA table_info(users)").fetchall()
-    names = [column["name"] for column in columns]
 
-    if "is_admin" not in names:
-        db.execute(
-            "ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0"
-        )
+    column = db.execute("""
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_name = 'users'
+          AND column_name = 'is_admin'
+        LIMIT 1
+    """).fetchone()
+
+    if not column:
+        db.execute("""
+            ALTER TABLE users
+            ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0
+        """)
         db.commit()
 
     db.close()
@@ -179,7 +191,7 @@ def register():
             referrer = conn.execute("""
                 SELECT id
                 FROM users
-                WHERE referral_code = ?
+                WHERE referral_code = %s
                 LIMIT 1
             """, (referral_code_from_link,)).fetchone()
 
@@ -190,7 +202,7 @@ def register():
             conn.execute("""
                 INSERT INTO users
                 (fullname, username, email, password, referral_code, referred_by)
-                VALUES (?, ?, ?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s, %s, %s)
             """, (
                 fullname,
                 username,
@@ -202,7 +214,7 @@ def register():
 
             conn.commit()
 
-        except sqlite3.IntegrityError:
+        except psycopg.IntegrityError:
             conn.close()
             flash("Username or email already exists.")
             return redirect(url_for("register"))
@@ -225,7 +237,7 @@ def login():
 
         user = conn.execute("""
             SELECT * FROM users
-            WHERE username = ? OR email = ?
+            WHERE username = %s OR email = %s
         """, (username, username)).fetchone()
 
         conn.close()
@@ -249,14 +261,14 @@ def dashboard():
     conn = get_db()
 
     user = conn.execute(
-        "SELECT * FROM users WHERE id = ?",
+        "SELECT * FROM users WHERE id = %s",
         (session["user_id"],)
     ).fetchone()
 
     active_plans = conn.execute("""
         SELECT *
         FROM user_plans
-        WHERE user_id = ?
+        WHERE user_id = %s
           AND status = 'Active'
         ORDER BY id DESC
     """, (session["user_id"],)).fetchall()
@@ -288,7 +300,7 @@ def activate_plan(plan_id):
     user = db.execute("""
         SELECT balance
         FROM users
-        WHERE id = ?
+        WHERE id = %s
     """, (user_id,)).fetchone()
 
     balance = float(user["balance"] or 0)
@@ -296,8 +308,8 @@ def activate_plan(plan_id):
     existing = db.execute("""
         SELECT id
         FROM user_plans
-        WHERE user_id = ?
-          AND plan_id = ?
+        WHERE user_id = %s
+          AND plan_id = %s
           AND status = 'Active'
         LIMIT 1
     """, (user_id, plan_id)).fetchone()
@@ -318,14 +330,14 @@ def activate_plan(plan_id):
 
     db.execute("""
         UPDATE users
-        SET balance = balance - ?
-        WHERE id = ?
+        SET balance = balance - %s
+        WHERE id = %s
     """, (selected_plan["amount"], user_id))
 
     db.execute("""
         INSERT INTO user_plans
         (user_id, plan_id, plan_name, amount, daily_amount, status)
-        VALUES (?, ?, ?, ?, ?, 'Active')
+        VALUES (%s, %s, %s, %s, %s, 'Active')
     """, (
         user_id,
         plan_id,
@@ -339,7 +351,7 @@ def activate_plan(plan_id):
     referral_info = db.execute("""
         SELECT referred_by
         FROM users
-        WHERE id = ?
+        WHERE id = %s
     """, (user_id,)).fetchone()
 
     if referral_info and referral_info["referred_by"]:
@@ -347,8 +359,8 @@ def activate_plan(plan_id):
 
         db.execute("""
             UPDATE users
-            SET balance = COALESCE(balance, 0) + ?
-            WHERE id = ?
+            SET balance = COALESCE(balance, 0) + %s
+            WHERE id = %s
         """, (
             referral_bonus,
             referral_info["referred_by"]
@@ -395,8 +407,8 @@ def daily_bonus():
         last_claim = db.execute("""
             SELECT id
             FROM daily_bonuses
-            WHERE user_id = ?
-              AND claimed_at > datetime('now', '-24 hours')
+            WHERE user_id = %s
+              AND claimed_at > CURRENT_TIMESTAMP - INTERVAL '24 hours'
             ORDER BY id DESC
             LIMIT 1
         """, (user_id,)).fetchone()
@@ -411,12 +423,12 @@ def daily_bonus():
         db.execute("""
             UPDATE users
             SET balance = COALESCE(balance, 0) + 50
-            WHERE id = ?
+            WHERE id = %s
         """, (user_id,))
 
         db.execute("""
             INSERT INTO daily_bonuses (user_id, amount, claimed_at)
-            VALUES (?, 50, datetime('now'))
+            VALUES (%s, 50, CURRENT_TIMESTAMP)
         """, (user_id,))
 
         db.commit()
@@ -427,8 +439,8 @@ def daily_bonus():
     last_claim = db.execute("""
         SELECT id
         FROM daily_bonuses
-        WHERE user_id = ?
-          AND claimed_at > datetime('now', '-24 hours')
+        WHERE user_id = %s
+          AND claimed_at > CURRENT_TIMESTAMP - INTERVAL '24 hours'
         ORDER BY id DESC
         LIMIT 1
     """, (user_id,)).fetchone()
@@ -438,7 +450,7 @@ def daily_bonus():
     user = db.execute("""
         SELECT balance
         FROM users
-        WHERE id = ?
+        WHERE id = %s
     """, (user_id,)).fetchone()
 
     balance = float(user["balance"] or 0)
@@ -446,7 +458,7 @@ def daily_bonus():
     history = db.execute("""
         SELECT amount, claimed_at
         FROM daily_bonuses
-        WHERE user_id = ?
+        WHERE user_id = %s
         ORDER BY id DESC
         LIMIT 10
     """, (user_id,)).fetchall()
@@ -470,7 +482,7 @@ def withdraw():
     user = db.execute("""
         SELECT balance
         FROM users
-        WHERE id = ?
+        WHERE id = %s
     """, (user_id,)).fetchone()
 
     balance = float(user["balance"] or 0)
@@ -504,7 +516,7 @@ def withdraw():
         db.execute("""
             INSERT INTO withdrawals
             (user_id, amount, method, account_name, account_number, bank_name)
-            VALUES (?, ?, 'Bank Transfer', ?, ?, ?)
+            VALUES (%s, %s, 'Bank Transfer', %s, %s, %s)
         """, (
             user_id,
             amount,
@@ -515,8 +527,8 @@ def withdraw():
 
         db.execute("""
             UPDATE users
-            SET balance = balance - ?
-            WHERE id = ?
+            SET balance = balance - %s
+            WHERE id = %s
         """, (amount, user_id))
 
         db.commit()
@@ -527,7 +539,7 @@ def withdraw():
     withdrawals = db.execute("""
         SELECT *
         FROM withdrawals
-        WHERE user_id = ?
+        WHERE user_id = %s
         ORDER BY id DESC
     """, (user_id,)).fetchall()
 
@@ -549,7 +561,7 @@ def admin_login():
         admin = db.execute("""
             SELECT id, username, password, is_admin
             FROM users
-            WHERE username = ?
+            WHERE username = %s
               AND is_admin = 1
             LIMIT 1
         """, (username,)).fetchone()
@@ -612,7 +624,7 @@ def approve_deposit(deposit_id):
     deposit = db.execute("""
         SELECT *
         FROM deposits
-        WHERE id = ? AND status = 'Pending'
+        WHERE id = %s AND status = 'Pending'
     """, (deposit_id,)).fetchone()
 
     if not deposit:
@@ -622,8 +634,8 @@ def approve_deposit(deposit_id):
 
     db.execute("""
         UPDATE users
-        SET balance = COALESCE(balance, 0) + ?
-        WHERE id = ?
+        SET balance = COALESCE(balance, 0) + %s
+        WHERE id = %s
     """, (deposit["amount"], deposit["user_id"]))
 
     db.execute("""
@@ -631,7 +643,7 @@ def approve_deposit(deposit_id):
         SET status = 'Approved',
             admin_note = 'Deposit approved',
             reviewed_at = CURRENT_TIMESTAMP
-        WHERE id = ? AND status = 'Pending'
+        WHERE id = %s AND status = 'Pending'
     """, (deposit_id,))
 
     db.commit()
@@ -657,7 +669,7 @@ def reject_deposit(deposit_id):
     deposit = db.execute("""
         SELECT id
         FROM deposits
-        WHERE id = ? AND status = 'Pending'
+        WHERE id = %s AND status = 'Pending'
     """, (deposit_id,)).fetchone()
 
     if not deposit:
@@ -668,9 +680,9 @@ def reject_deposit(deposit_id):
     db.execute("""
         UPDATE deposits
         SET status = 'Rejected',
-            admin_note = ?,
+            admin_note = %s,
             reviewed_at = CURRENT_TIMESTAMP
-        WHERE id = ? AND status = 'Pending'
+        WHERE id = %s AND status = 'Pending'
     """, (reason, deposit_id))
 
     db.commit()
@@ -690,7 +702,7 @@ def approve_withdrawal(withdrawal_id):
     withdrawal = db.execute("""
         SELECT *
         FROM withdrawals
-        WHERE id = ? AND status = 'Pending'
+        WHERE id = %s AND status = 'Pending'
     """, (withdrawal_id,)).fetchone()
 
     if not withdrawal:
@@ -701,7 +713,7 @@ def approve_withdrawal(withdrawal_id):
     db.execute("""
         UPDATE withdrawals
         SET status = 'Approved'
-        WHERE id = ? AND status = 'Pending'
+        WHERE id = %s AND status = 'Pending'
     """, (withdrawal_id,))
 
     db.commit()
@@ -727,7 +739,7 @@ def reject_withdrawal(withdrawal_id):
     withdrawal = db.execute("""
         SELECT *
         FROM withdrawals
-        WHERE id = ? AND status = 'Pending'
+        WHERE id = %s AND status = 'Pending'
     """, (withdrawal_id,)).fetchone()
 
     if not withdrawal:
@@ -738,14 +750,14 @@ def reject_withdrawal(withdrawal_id):
     # Return the previously reserved amount to the user
     db.execute("""
         UPDATE users
-        SET balance = COALESCE(balance, 0) + ?
-        WHERE id = ?
+        SET balance = COALESCE(balance, 0) + %s
+        WHERE id = %s
     """, (withdrawal["amount"], withdrawal["user_id"]))
 
     db.execute("""
         UPDATE withdrawals
         SET status = 'Rejected'
-        WHERE id = ? AND status = 'Pending'
+        WHERE id = %s AND status = 'Pending'
     """, (withdrawal_id,))
 
     db.commit()
@@ -821,7 +833,7 @@ def deposit():
         db.execute("""
             INSERT INTO deposits
             (user_id, amount, payment_method, payment_name, screenshot, status)
-            VALUES (?, ?, ?, ?, ?, 'Pending')
+            VALUES (%s, %s, %s, %s, %s, 'Pending')
         """, (
             user_id,
             amount,
@@ -838,7 +850,7 @@ def deposit():
     deposits = db.execute("""
         SELECT *
         FROM deposits
-        WHERE user_id = ?
+        WHERE user_id = %s
         ORDER BY id DESC
     """, (user_id,)).fetchall()
 
@@ -860,8 +872,8 @@ def claim_package_reward(plan_id):
     plan = db.execute("""
         SELECT *
         FROM user_plans
-        WHERE id = ?
-          AND user_id = ?
+        WHERE id = %s
+          AND user_id = %s
           AND status = 'Active'
         LIMIT 1
     """, (plan_id, user_id)).fetchone()
@@ -874,9 +886,9 @@ def claim_package_reward(plan_id):
     recent_claim = db.execute("""
         SELECT id
         FROM package_rewards
-        WHERE user_id = ?
-          AND user_plan_id = ?
-          AND claimed_at > datetime('now', '-24 hours')
+        WHERE user_id = %s
+          AND user_plan_id = %s
+          AND claimed_at > CURRENT_TIMESTAMP - INTERVAL '24 hours'
         LIMIT 1
     """, (user_id, plan_id)).fetchone()
 
@@ -893,14 +905,14 @@ def claim_package_reward(plan_id):
 
     db.execute("""
         UPDATE users
-        SET balance = COALESCE(balance, 0) + ?
-        WHERE id = ?
+        SET balance = COALESCE(balance, 0) + %s
+        WHERE id = %s
     """, (reward, user_id))
 
     db.execute("""
         INSERT INTO package_rewards
         (user_id, user_plan_id, amount)
-        VALUES (?, ?, ?)
+        VALUES (%s, %s, %s)
     """, (user_id, plan_id, reward))
 
     db.commit()
