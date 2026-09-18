@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Bonus - Blogger</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #07130f;
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 30px 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .top {
+            margin-bottom: 25px;
+        }
+
+        .back {
+            display: inline-block;
+            color: #d8b45a;
+            text-decoration: none;
+            margin-bottom: 20px;
+        }
+
+        .title {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #9eaaa5;
+        }
+
+        .card {
+            background: #0d211a;
+            border: 1px solid #254536;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+
+        .bonus-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 18px;
+            background: #173d2d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 35px;
+            margin-bottom: 20px;
+        }
+
+        .amount {
+            font-size: 42px;
+            font-weight: 800;
+            color: #d8b45a;
+            margin-bottom: 8px;
+        }
+
+        .label {
+            color: #aab7b1;
+            margin-bottom: 25px;
+        }
+
+        .claim-btn {
+            width: 100%;
+            border: none;
+            border-radius: 12px;
+            padding: 16px;
+            background: #d8b45a;
+            color: #07130f;
+            font-size: 17px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .claim-btn:disabled {
+            background: #34463e;
+            color: #9eaaa5;
+            cursor: not-allowed;
+        }
+
+        .balance {
+            margin-top: 20px;
+            padding: 18px;
+            border-radius: 12px;
+            background: #091912;
+            border: 1px solid #203a2e;
+        }
+
+        .balance-label {
+            color: #9eaaa5;
+            font-size: 14px;
+            margin-bottom: 6px;
+        }
+
+        .balance-value {
+            font-size: 25px;
+            font-weight: 800;
+        }
+
+        .message {
+            padding: 14px 16px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            background: #183c2d;
+            color: #d9f5e7;
+            border: 1px solid #2e654c;
+        }
+
+        .message.error {
+            background: #3b211f;
+            border-color: #75403b;
+            color: #ffd9d5;
+        }
+
+        .history-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 18px;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #203a2e;
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-amount {
+            color: #d8b45a;
+            font-weight: 700;
+        }
+
+        .history-date {
+            color: #899890;
+            font-size: 13px;
+        }
+
+        .empty {
+            color: #899890;
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 20px 15px;
+            }
+
+            .card {
+                padding: 22px;
+            }
+
+            .title {
+                font-size: 27px;
+            }
+
+            .amount {
+                font-size: 36px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="top">
+        <a href="{{ url_for('dashboard') }}" class="back">← Back to Dashboard</a>
+
+        <h1 class="title">Daily Bonus</h1>
+        <p class="subtitle">Claim your ₦50 daily reward every 24 hours.</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="message {% if category == 'error' %}error{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="card">
+
+        <div class="bonus-icon">🎁</div>
+
+        <div class="amount">₦50</div>
+
+        <div class="label">
+            Daily reward
+        </div>
+
+        <form method="POST" action="{{ url_for('daily_bonus') }}">
+            {% if can_claim %}
+                <button type="submit" class="claim-btn">
+                    Claim ₦50 Bonus
+                </button>
+            {% else %}
+                <button type="button" class="claim-btn" disabled>
+                    Already Claimed — Come Back in 24 Hours
+                </button>
+            {% endif %}
+        </form>
+
+        <div class="balance">
+            <div class="balance-label">Current Balance</div>
+            <div class="balance-value">₦{{ "{:,.2f}".format(balance) }}</div>
+        </div>
+
+    </div>
+
+    <div class="card">
+
+        <div class="history-title">Bonus History</div>
+
+        {% if history %}
+            {% for item in history %}
+                <div class="history-item">
+                    <div>
+                        <div class="history-amount">
+                            +₦{{ "{:,.2f}".format(item["amount"]) }}
+                        </div>
+                    </div>
+
+                    <div class="history-date">
+                        {{ item["claimed_at"] }}
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty">
+                No bonus claims yet.
+            </div>
+        {% endif %}
+
+    </div>
+
+</div>
+
+</body>
+</html>

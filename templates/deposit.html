@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deposit - Blogger</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/deposit.css') }}">
+</head>
+
+<body>
+
+<div class="deposit-page">
+
+    <header class="topbar">
+        <a href="{{ url_for('dashboard') }}" class="back-btn">← Dashboard</a>
+        <div class="brand">Blogger</div>
+    </header>
+
+    <main class="deposit-container">
+
+        <div class="page-heading">
+            <span class="eyebrow">Deposit</span>
+            <h1>Add Funds</h1>
+            <p>Send your deposit and submit the transaction details below.</p>
+        </div>
+
+        <section class="payment-card">
+
+            <div class="card-heading">
+                <div class="payment-icon">₦</div>
+                <div>
+                    <h2>Payment Method</h2>
+                    <p>Use the payment details below.</p>
+                </div>
+            </div>
+
+            <div class="payment-box">
+                <div class="payment-row">
+                    <span>Payment Number</span>
+                    <strong>7065226090</strong>
+                </div>
+
+                <div class="payment-row">
+                    <span>Account Name</span>
+                    <strong>BLESSING</strong>
+                </div>
+
+                <div class="payment-row">
+                    <span>Payment Method</span>
+                    <strong>Opay</strong>
+                </div>
+            </div>
+
+        </section>
+
+        <section class="deposit-card">
+
+            <div class="card-heading">
+                <div class="deposit-icon">＋</div>
+                <div>
+                    <h2>Submit Deposit</h2>
+                    <p>Enter the amount sent and upload your transaction screenshot.</p>
+                </div>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST"
+                  action="{{ url_for('deposit') }}"
+                  enctype="multipart/form-data">
+
+                <div class="form-group">
+                    <label>Amount Sent</label>
+
+                    <div class="amount-input">
+                        <span>₦</span>
+                        <input
+                            type="number"
+                            name="amount"
+                            min="7000"
+                            step="1"
+                            placeholder="Minimum ₦7,000"
+                            required
+                        >
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Payment Name</label>
+
+                    <input
+                        type="text"
+                        name="payment_name"
+                        placeholder="Name used for the payment"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label>Transaction Screenshot</label>
+
+                    <div class="upload-box">
+                        <input
+                            type="file"
+                            name="screenshot"
+                            accept=".png,.jpg,.jpeg,.webp"
+                            required
+                        >
+
+                        <div class="upload-content">
+                            <div class="upload-icon">↑</div>
+                            <strong>Upload Screenshot</strong>
+                            <span>PNG, JPG, JPEG or WEBP</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="deposit-btn">
+                    Submit Deposit
+                    <span>→</span>
+                </button>
+
+            </form>
+
+        </section>
+
+        <section class="history-card">
+
+            <div class="history-heading">
+                <div>
+                    <h2>Deposit History</h2>
+                    <p>Your submitted deposit requests</p>
+                </div>
+
+                <div class="history-count">
+                    {{ deposits|length }}
+                </div>
+            </div>
+
+            {% if deposits %}
+
+                <div class="history-list">
+
+                    {% for deposit in deposits %}
+
+                    <div class="history-item">
+
+                        <div class="history-icon">₦</div>
+
+                        <div class="history-info">
+                            <strong>₦{{ "{:,.2f}".format(deposit["amount"]) }}</strong>
+
+                            <span>
+                                {{ deposit["payment_name"] }}
+                                • {{ deposit["payment_method"] }}
+                            </span>
+
+                            <small>{{ deposit["created_at"] }}</small>
+                        </div>
+
+                        <div class="status {{ deposit['status']|lower }}">
+                            {{ deposit["status"] }}
+                        </div>
+
+                    </div>
+
+                    {% endfor %}
+
+                </div>
+
+            {% else %}
+
+                <div class="empty-history">
+                    <div class="empty-icon">₦</div>
+                    <h3>No deposits yet</h3>
+                    <p>Your deposit submissions will appear here.</p>
+                </div>
+
+            {% endif %}
+
+        </section>
+
+    </main>
+
+</div>
+
+</body>
+</html>

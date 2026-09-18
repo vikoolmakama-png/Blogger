@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Account — Blogger</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+</head>
+<body>
+
+<div class="background"></div>
+
+<div class="auth-page">
+
+    <a href="/" class="brand">
+        <span>B</span>
+        Blogger
+    </a>
+
+    <div class="auth-card">
+
+        <div class="top">
+            <div class="icon">B</div>
+            <h1>Create your account</h1>
+            <p>Join Blogger and get started today.</p>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="alert">
+                    {{ messages[0] }}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+
+            <label>Full Name</label>
+            <input
+                type="text"
+                name="fullname"
+                placeholder="Enter your full name"
+                required
+            >
+
+            <label>Username</label>
+            <input
+                type="text"
+                name="username"
+                placeholder="Choose a username"
+                required
+            >
+
+            <label>Email Address</label>
+            <input
+                type="email"
+                name="email"
+                placeholder="you@example.com"
+                required
+            >
+
+            <label>Password</label>
+            <input
+                type="password"
+                name="password"
+                placeholder="Create a password"
+                required
+            >
+
+            <label>Referral Code <small>(optional)</small></label>
+            <input
+                type="text"
+                name="referral"
+                placeholder="Enter referral code"
+            >
+
+            <button type="submit">
+                Create Account <span>→</span>
+            </button>
+
+        </form>
+
+        <div class="bottom">
+            Already have an account?
+            <a href="{{ url_for('login') }}">Login</a>
+        </div>
+
+    </div>
+
+    <p class="copyright">© 2026 Blogger. All rights reserved.</p>
+
+</div>
+
+</body>
+</html>

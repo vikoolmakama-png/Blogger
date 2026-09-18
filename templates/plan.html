@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ plan.name }} Plan — Blogger</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/plan.css') }}">
+
+<style>
+.flash-messages {
+    width: min(92%, 700px);
+    margin: 20px auto 0;
+}
+
+.flash-message {
+    padding: 15px 18px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.flash-message.success {
+    background: #dff7e7;
+    color: #146c35;
+    border: 1px solid #9ed9b1;
+}
+
+.flash-message.error {
+    background: #ffe3e3;
+    color: #a51d2d;
+    border: 1px solid #f0a0a8;
+}
+</style>
+
+</head>
+
+
+<body>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+                <div class="flash-message {{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+
+<div class="plan-page">
+
+    <a href="{{ url_for('dashboard') }}" class="back-link">
+        ← Back to Dashboard
+    </a>
+
+    <div class="plan-hero">
+
+        <div class="plan-badge">
+            PLAN {{ plan.number }}
+        </div>
+
+        <h1>{{ plan.name }}</h1>
+
+        <p class="plan-subtitle">
+            Explore the details of this Blogger promotional plan.
+        </p>
+
+        <div class="amount-box">
+            <span>Plan Amount</span>
+            <strong>₦{{ "{:,.0f}".format(plan.amount) }}</strong>
+        </div>
+
+        <div class="daily-box">
+            <span>Illustrative Daily Figure</span>
+            <strong>₦{{ "{:,.0f}".format(plan.daily) }}</strong>
+            <small></small>
+        </div>
+
+    </div>
+
+    <div class="plan-content">
+
+
+
+        <div class="features-card">
+
+            <h2>Plan Features</h2>
+
+            <div class="feature">
+                <span>01</span>
+                <div>
+                    <strong>Selected Plan</strong>
+                    <p>{{ plan.name }} promotional tier</p>
+                </div>
+            </div>
+
+            <div class="feature">
+                <span>02</span>
+                <div>
+                    <strong>Plan Amount</strong>
+                    <p>₦{{ "{:,.0f}".format(plan.amount) }}</p>
+                </div>
+            </div>
+
+            <div class="feature">
+                <span>03</span>
+                <div>
+                    <strong>Daily Figure</strong>
+                    <p>₦{{ "{:,.0f}".format(plan.daily) }}</p>
+                </div>
+            </div>
+
+            <div class="feature">
+                <span>04</span>
+                <div>
+                    <strong>Account Bonus</strong>
+                    <p>₦700 welcome bonus + ₦50 daily bonus</p>
+                </div>
+            </div>
+
+        </div>
+
+
+
+        <form method="POST" action="{{ url_for('activate_plan', plan_id=plan_id) }}">
+            <button type="submit" class="continue-btn">
+                Activate Plan
+                <span>→</span>
+            </button>
+        </form>
+
+    </div>
+
+</div>
+
+{% endwith %}
+
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — Blogger</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+</head>
+<body>
+
+<div class="background"></div>
+
+<div class="auth-page">
+
+    <a href="/" class="brand">
+        <span>B</span>
+        Blogger
+    </a>
+
+    <div class="auth-card">
+
+        <div class="top">
+            <div class="icon">B</div>
+            <h1>Welcome back</h1>
+            <p>Login to your Blogger account.</p>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="alert">
+                    {{ messages[0] }}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+
+            <label>Username or Email</label>
+            <input
+                type="text"
+                name="username"
+                placeholder="Username or email"
+                required
+            >
+
+            <div class="password-label">
+                <label>Password</label>
+                <a href="#">Forgot password?</a>
+            </div>
+
+            <input
+                type="password"
+                name="password"
+                placeholder="Enter your password"
+                required
+            >
+
+            <button type="submit">
+                Login <span>→</span>
+            </button>
+
+        </form>
+
+        <div class="bottom">
+            Don't have an account?
+            <a href="{{ url_for('register') }}">Create Account</a>
+        </div>
+
+    </div>
+
+    <p class="copyright">© 2026 Blogger. All rights reserved.</p>
+
+</div>
+
+</body>
+</html>

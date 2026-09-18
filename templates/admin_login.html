@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blogger Admin Login</title>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #07140f;
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+
+        .box {
+            width: min(90%, 400px);
+            padding: 30px;
+            background: #10231b;
+            border-radius: 18px;
+            box-shadow: 0 20px 50px rgba(0,0,0,.35);
+        }
+
+        h1 {
+            margin-top: 0;
+        }
+
+        input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 14px;
+            margin: 8px 0;
+            border-radius: 10px;
+            border: 1px solid #315243;
+            background: #091a13;
+            color: white;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            margin-top: 12px;
+            border: 0;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            background: #d4af37;
+            color: #07140f;
+        }
+
+        .error {
+            background: #5b2020;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h1>Blogger Admin</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="{{ category }}">{{ message }}</div>
+        {% endfor %}
+    {% endwith %}
+
+    <form method="POST">
+        <input type="text" name="username" placeholder="Admin username" required>
+        <input type="password" name="password" placeholder="Admin password" required>
+        <button type="submit">Login to Admin</button>
+    </form>
+</div>
+
+</body>
+</html>

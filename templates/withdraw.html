@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Withdraw - Blogger</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/withdraw.css') }}">
+</head>
+
+<body>
+
+<div class="withdraw-page">
+
+    <header class="topbar">
+        <a href="{{ url_for('dashboard') }}" class="back-btn">← Dashboard</a>
+        <div class="brand">Blogger</div>
+    </header>
+
+    <main class="withdraw-container">
+
+        <div class="page-heading">
+            <span class="eyebrow">Withdraw</span>
+            <h1>Withdraw Your Funds</h1>
+            <p>Enter your bank details and submit your withdrawal request.</p>
+        </div>
+
+        <section class="withdraw-card">
+
+            <div class="card-top">
+                <div class="card-icon">₦</div>
+                <div>
+                    <h2>Withdrawal Details</h2>
+                    <p>Complete the information below.</p>
+                </div>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <div class="balance-preview">
+                <div>
+                    <span>Available Balance</span>
+                    <strong>₦{{ "{:,.2f}".format(balance) }}</strong>
+                </div>
+                <div>
+                    <span>Minimum Withdrawal</span>
+                    <strong>₦1,500</strong>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ url_for('withdraw') }}">
+
+                <div class="form-grid">
+
+                    <div class="form-group full">
+                        <label>Withdrawal Amount</label>
+                        <div class="amount-input">
+                            <span>₦</span>
+                            <input
+                                type="number"
+                                name="amount"
+                                min="1500"
+                                step="100"
+                                placeholder="Enter amount"
+                                required
+                            >
+                        </div>
+                        <small class="form-help">Minimum withdrawal amount is ₦1,500.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Bank Name</label>
+                        <input
+                            type="text"
+                            name="bank_name"
+                            placeholder="Enter bank name"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label>Account Name</label>
+                        <input
+                            type="text"
+                            name="account_name"
+                            placeholder="Enter account name"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group full">
+                        <label>Account Number</label>
+                        <input
+                            type="text"
+                            name="account_number"
+                            inputmode="numeric"
+                            maxlength="20"
+                            placeholder="Enter account number"
+                            required
+                        >
+                    </div>
+
+                </div>
+
+                <input type="hidden" name="method" value="Bank Transfer">
+
+                <button type="submit" class="withdraw-btn">
+                    Submit Withdrawal
+                    <span>→</span>
+                </button>
+
+            </form>
+
+        </section>
+
+
+        <section class="history-card">
+
+            <div class="history-title">
+                <div>
+                    <h2>Withdrawal History</h2>
+                    <p>Your recent withdrawal requests</p>
+                </div>
+
+                <div class="history-count">
+                    {{ withdrawals|length }}
+                </div>
+            </div>
+
+            {% if withdrawals %}
+
+                <div class="history-list">
+
+                    {% for withdrawal in withdrawals %}
+
+                    <div class="history-item">
+
+                        <div class="history-icon">₦</div>
+
+                        <div class="history-info">
+                            <strong>₦{{ "{:,.2f}".format(withdrawal["amount"]) }}</strong>
+
+                            <span>
+                                {{ withdrawal["bank_name"] }}
+                                • {{ withdrawal["account_number"] }}
+                            </span>
+
+                            <small>
+                                {{ withdrawal["created_at"] }}
+                            </small>
+                        </div>
+
+                        <div class="status pending">
+                            {{ withdrawal["status"] }}
+                        </div>
+
+                    </div>
+
+                    {% endfor %}
+
+                </div>
+
+            {% else %}
+
+                <div class="empty-history">
+                    <div class="empty-icon">₦</div>
+                    <h3>No withdrawals yet</h3>
+                    <p>Your withdrawal requests will appear here.</p>
+                </div>
+
+            {% endif %}
+
+        </section>
+
+    </main>
+
+</div>
+
+</body>
+</html>

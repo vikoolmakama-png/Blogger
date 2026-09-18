@@ -1,0 +1,250 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Inter, Arial, sans-serif;
+    background: #070b14;
+    color: #f5f7fb;
+}
+
+.plan-page {
+    width: min(900px, 92%);
+    margin: 0 auto;
+    padding: 35px 0 70px;
+}
+
+.back-link {
+    display: inline-block;
+    color: #9da8bd;
+    text-decoration: none;
+    margin-bottom: 28px;
+    font-size: 14px;
+}
+
+.back-link:hover {
+    color: #ffffff;
+}
+
+.plan-hero {
+    position: relative;
+    overflow: hidden;
+    padding: 45px;
+    border-radius: 28px;
+    background:
+        radial-gradient(circle at 90% 10%, rgba(75, 123, 255, .25), transparent 35%),
+        linear-gradient(135deg, #111a2e, #0b1120);
+    border: 1px solid rgba(255,255,255,.08);
+    box-shadow: 0 25px 80px rgba(0,0,0,.35);
+}
+
+.plan-hero::after {
+    content: "";
+    position: absolute;
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,.06);
+    right: -80px;
+    bottom: -90px;
+}
+
+.plan-badge {
+    display: inline-flex;
+    padding: 8px 13px;
+    border-radius: 30px;
+    background: rgba(255,255,255,.08);
+    color: #aebeff;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+}
+
+.plan-hero h1 {
+    font-size: clamp(38px, 7vw, 68px);
+    margin: 20px 0 8px;
+    letter-spacing: -2px;
+}
+
+.plan-subtitle {
+    color: #9ba7bb;
+    margin: 0 0 35px;
+}
+
+.amount-box,
+.daily-box {
+    display: inline-flex;
+    flex-direction: column;
+    vertical-align: top;
+    margin-right: 15px;
+    margin-top: 10px;
+    padding: 18px 22px;
+    border-radius: 18px;
+    background: rgba(255,255,255,.055);
+    border: 1px solid rgba(255,255,255,.07);
+}
+
+.amount-box span,
+.daily-box span {
+    color: #8d98ad;
+    font-size: 12px;
+    margin-bottom: 7px;
+}
+
+.amount-box strong {
+    font-size: 25px;
+}
+
+.daily-box strong {
+    font-size: 30px;
+}
+
+.daily-box small {
+    color: #718099;
+    margin-top: 5px;
+}
+
+.plan-content {
+    margin-top: 22px;
+}
+
+.info-card,
+.features-card,
+.notice {
+    background: #0d1422;
+    border: 1px solid rgba(255,255,255,.07);
+    border-radius: 22px;
+}
+
+.info-card {
+    display: flex;
+    gap: 18px;
+    padding: 25px;
+    margin-bottom: 18px;
+}
+
+.info-icon {
+    min-width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border-radius: 13px;
+    background: rgba(77, 125, 255, .15);
+    color: #8ba8ff;
+    font-weight: 900;
+}
+
+.info-card h3 {
+    margin: 2px 0 8px;
+}
+
+.info-card p {
+    margin: 0;
+    line-height: 1.7;
+    color: #929db0;
+}
+
+.features-card {
+    padding: 28px;
+}
+
+.features-card h2 {
+    margin: 0 0 22px;
+}
+
+.feature {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 18px 0;
+    border-top: 1px solid rgba(255,255,255,.06);
+}
+
+.feature > span {
+    min-width: 38px;
+    color: #63718a;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.feature strong {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.feature p {
+    margin: 0;
+    color: #8995a9;
+    font-size: 14px;
+}
+
+.notice {
+    display: flex;
+    gap: 14px;
+    margin-top: 18px;
+    padding: 20px;
+    color: #929db0;
+    line-height: 1.6;
+}
+
+.notice span {
+    color: #8ba8ff;
+}
+
+.notice p {
+    margin: 0;
+}
+
+.notice strong {
+    color: #dbe3f3;
+}
+
+.continue-btn {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 18px;
+    padding: 18px 22px;
+    border-radius: 17px;
+    background: #ffffff;
+    color: #080d17;
+    text-decoration: none;
+    font-weight: 800;
+    transition: .2s ease;
+}
+
+.continue-btn:hover {
+    transform: translateY(-2px);
+}
+
+.continue-btn span {
+    font-size: 22px;
+}
+
+@media (max-width: 600px) {
+
+    .plan-page {
+        padding-top: 22px;
+    }
+
+    .plan-hero {
+        padding: 28px 22px;
+        border-radius: 22px;
+    }
+
+    .plan-hero h1 {
+        font-size: 42px;
+    }
+
+    .amount-box,
+    .daily-box {
+        display: flex;
+        width: 100%;
+        margin-right: 0;
+    }
+
+    .features-card {
+        padding: 22px;
+    }
+}

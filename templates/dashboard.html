@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>Blogger Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+
+<body>
+
+<div class="dashboard-page">
+
+    <!-- HEADER -->
+    <header class="dashboard-header">
+        <div class="brand">
+            <span class="brand-mark">B</span>
+            <span class="brand-text">BLOGGER</span>
+        </div>
+
+        <div class="user-area">
+            <span class="welcome-user">{{ user["fullname"] }}</span>
+            <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+        </div>
+    </header>
+
+
+    <main class="dashboard-main">
+
+        <!-- WELCOME -->
+        <section class="welcome-section">
+            <div>
+                <span class="welcome-kicker">WELCOME BACK</span>
+                <h1>{{ user["fullname"] }}</h1>
+                <p>Manage your Blogger account from your dashboard.</p>
+            </div>
+        </section>
+
+
+        <!-- BALANCE -->
+        <section class="balance-card">
+
+            <div class="balance-card-left">
+                <span class="balance-label">AVAILABLE BALANCE</span>
+
+                <div class="balance">
+                    ₦{{ "{:,.2f}".format(user["balance"] or 0) }}
+                </div>
+
+                <span class="balance-note">
+                    Your current account balance
+                </span>
+            </div>
+
+            <div class="balance-icon">
+                ₦
+            </div>
+
+        </section>
+
+
+        <!-- ACCOUNT ACTIONS -->
+        <section class="account-actions">
+
+            <div style="margin-bottom: 12px;">
+                <a href="https://t.me/+KV52vypsDW5kNDU0"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   style="display:block; width:100%; box-sizing:border-box; text-align:center; padding:14px 18px; border-radius:12px; background:#229ED9; color:white; text-decoration:none; font-weight:700;">
+                    📢 Join Our Official Telegram Channel
+                </a>
+            </div>
+            <div style="margin-bottom: 12px; padding: 16px; border-radius: 12px; background: #f5f9ff; border: 1px solid #dbeafe;">
+                <div style="font-weight: 700; margin-bottom: 6px;">🔗 Referral Link</div>
+                <div style="font-size: 13px; color: #64748b; margin-bottom: 10px;">
+                    Share your link and receive 20% referral credit when a referred user activates a package.
+                </div>
+
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <input
+                        id="referralLink"
+                        type="text"
+                        readonly
+                        value="{{ request.url_root.rstrip('/') }}{{ url_for('register') }}?ref={{ user['referral_code'] }}"
+                        style="flex:1; min-width:0; padding:12px; border:1px solid #cbd5e1; border-radius:8px; background:white; font-size:13px;"
+                    >
+
+                    <button
+                        type="button"
+                        onclick="navigator.clipboard.writeText(document.getElementById('referralLink').value); this.innerText='Copied!'; setTimeout(() => this.innerText='Copy', 1500);"
+                        style="padding:12px 14px; border:0; border-radius:8px; background:#2563eb; color:white; font-weight:700; cursor:pointer;">
+                        Copy
+                    </button>
+                </div>
+            </div>
+
+            <a href="{{ url_for('deposit') }}" class="account-action deposit-action">
+                <div class="action-icon">＋</div>
+                <div class="action-text">
+                    <strong>Deposit</strong>
+                    <span>Add money to your account</span>
+                </div>
+                <b>→</b>
+            </a>
+
+            <a href="{{ url_for('withdraw') }}" class="account-action withdraw-action">
+                <div class="action-icon">↗</div>
+                <div class="action-text">
+                    <strong>Withdraw</strong>
+                    <span>Request a withdrawal</span>
+                </div>
+                <b>→</b>
+            </a>
+
+        </section>
+
+
+        <!-- DAILY ₦50 BONUS -->
+        <section class="daily-bonus-dashboard">
+
+            <div class="bonus-glow"></div>
+
+            <div class="daily-bonus-header">
+
+                <div class="bonus-title-area">
+                    <span class="daily-bonus-kicker">DAILY REWARD</span>
+
+                    <h2>₦50 Daily Bonus</h2>
+
+                    <p>
+                        Claim your ₦50 reward once every 24 hours.
+                    </p>
+                </div>
+
+                <div class="daily-bonus-gift">
+                    🎁
+                </div>
+
+            </div>
+
+
+            <div class="daily-bonus-info">
+
+                <div class="bonus-info-box">
+                    <span>REWARD</span>
+                    <strong>₦50.00</strong>
+                </div>
+
+                <div class="bonus-info-box">
+                    <span>FREQUENCY</span>
+                    <strong>24 Hours</strong>
+                </div>
+
+                <div class="bonus-info-box">
+                    <span>STATUS</span>
+
+                    {% if can_claim %}
+                        <strong class="status-ready">AVAILABLE</strong>
+                    {% else %}
+                        <strong class="status-wait">CLAIMED</strong>
+                    {% endif %}
+                </div>
+
+            </div>
+
+
+            <form method="POST" action="{{ url_for('daily_bonus') }}">
+
+                <button
+                    type="submit"
+                    class="daily-bonus-claim"
+                    {% if not can_claim %}disabled{% endif %}
+                >
+
+                    {% if can_claim %}
+                        <span>🎁</span>
+                        Claim ₦50 Daily Bonus
+                        <b>→</b>
+                    {% else %}
+                        <span>✓</span>
+                        Already Claimed — Come Back After 24 Hours
+                    {% endif %}
+
+                </button>
+
+            </form>
+
+        </section>
+
+
+        <!-- PACKAGES -->
+        <section class="plans-section" id="plans">
+
+            <div class="section-heading">
+
+                <span class="section-kicker">BLOGGER PACKAGES</span>
+
+                <h2>Choose a Package</h2>
+
+                <p>
+                    View the available Blogger packages.
+                </p>
+
+            </div>
+
+
+            <div class="big-plans-grid">
+
+
+                <!-- STARTER -->
+                <div class="big-plan">
+
+                    <div class="plan-top">
+                        <span class="plan-number">01</span>
+                        <span class="plan-tag">STARTER</span>
+                    </div>
+
+                    <h3>Starter</h3>
+
+                    <div class="plan-price">
+                        ₦7,000
+                    </div>
+
+                    <div class="plan-divider"></div>
+
+                    <span class="plan-label">DAILY FIGURE</span>
+
+                    <div class="plan-daily">
+                        ₦1,000
+                    </div>
+
+                    <a href="{{ url_for('plan', plan_id='starter') }}"
+                       class="big-plan-btn">
+                        View Plan <span>→</span>
+                    </a>
+
+                </div>
+
+
+                <!-- STANDARD -->
+                <div class="big-plan">
+
+                    <div class="plan-top">
+                        <span class="plan-number">02</span>
+                        <span class="plan-tag">STANDARD</span>
+                    </div>
+
+                    <h3>Standard</h3>
+
+                    <div class="plan-price">
+                        ₦15,000
+                    </div>
+
+                    <div class="plan-divider"></div>
+
+                    <span class="plan-label">DAILY FIGURE</span>
+
+                    <div class="plan-daily">
+                        ₦2,700
+                    </div>
+
+                    <a href="{{ url_for('plan', plan_id='standard') }}"
+                       class="big-plan-btn">
+                        View Plan <span>→</span>
+                    </a>
+
+                </div>
+
+
+                <!-- GROWTH -->
+                <div class="big-plan featured-plan">
+
+                    <div class="featured-badge">
+                        POPULAR
+                    </div>
+
+                    <div class="plan-top">
+                        <span class="plan-number">03</span>
+                        <span class="plan-tag">GROWTH</span>
+                    </div>
+
+                    <h3>Growth</h3>
+
+                    <div class="plan-price">
+                        ₦30,000
+                    </div>
+
+                    <div class="plan-divider"></div>
+
+                    <span class="plan-label">DAILY FIGURE</span>
+
+                    <div class="plan-daily">
+                        ₦5,300
+                    </div>
+
+                    <a href="{{ url_for('plan', plan_id='growth') }}"
+                       class="big-plan-btn">
+                        View Plan <span>→</span>
+                    </a>
+
+                </div>
+
+
+                <!-- ADVANCED -->
+                <div class="big-plan">
+
+                    <div class="plan-top">
+                        <span class="plan-number">04</span>
+                        <span class="plan-tag">ADVANCED</span>
+                    </div>
+
+                    <h3>Advanced</h3>
+
+                    <div class="plan-price">
+                        ₦45,000
+                    </div>
+
+                    <div class="plan-divider"></div>
+
+                    <span class="plan-label">DAILY FIGURE</span>
+
+                    <div class="plan-daily">
+                        ₦8,500
+                    </div>
+
+                    <a href="{{ url_for('plan', plan_id='advanced') }}"
+                       class="big-plan-btn">
+                        View Plan <span>→</span>
+                    </a>
+
+                </div>
+
+
+                <!-- ELITE -->
+                <div class="big-plan">
+
+                    <div class="plan-top">
+                        <span class="plan-number">05</span>
+                        <span class="plan-tag">ELITE</span>
+                    </div>
+
+                    <h3>Elite</h3>
+
+                    <div class="plan-price">
+                        ₦70,000
+                    </div>
+
+                    <div class="plan-divider"></div>
+
+                    <span class="plan-label">DAILY FIGURE</span>
+
+                    <div class="plan-daily">
+                        ₦10,000
+                    </div>
+
+                    <a href="{{ url_for('plan', plan_id='elite') }}"
+                       class="big-plan-btn">
+                        View Plan <span>→</span>
+                    </a>
+
+                </div>
+
+
+                <!-- ULTIMATE -->
+                <div class="big-plan featured-plan">
+
+                    <div class="featured-badge">
+                        ULTIMATE
+                    </div>
+
+                    <div class="plan-top">
+                        <span class="plan-number">06</span>
+                        <span class="plan-tag">ULTIMATE</span>
+                    </div>
+
+                    <h3>Ultimate</h3>
+
+                    <div class="plan-price">
+                        ₦100,000
+                    </div>
+
+                    <div class="plan-divider"></div>
+
+                    <span class="plan-label">DAILY FIGURE</span>
+
+                    <div class="plan-daily">
+                        ₦15,000
+                    </div>
+
+                    <a href="{{ url_for('plan', plan_id='ultimate') }}"
+                       class="big-plan-btn">
+                        View Plan <span>→</span>
+                    </a>
+
+                </div>
+
+
+            </div>
+
+        </section>
+
+
+        <!-- ACTIVE PACKAGE REWARDS -->
+        <section class="package-rewards-section">
+
+            <div class="section-heading">
+                <span class="section-kicker">YOUR ACTIVE PACKAGES</span>
+                <h2>Daily Package</h2>
+                <p>Your activated packages are shown below.</p>
+            </div>
+
+            <div class="package-rewards-grid">
+
+                {% if active_plans %}
+
+                    {% for active_plan in active_plans %}
+
+                    <div class="reward-card">
+
+                        <div class="reward-card-top">
+                            <div>
+                                <span class="reward-number">
+                                    {{ "%02d"|format(loop.index) }}
+                                </span>
+
+                                <h3>{{ active_plan["plan_name"] }}</h3>
+                            </div>
+
+                            <span class="active-badge">ACTIVE</span>
+                        </div>
+
+                        <div class="reward-amount">
+                            ₦{{ "{:,.2f}".format(active_plan["daily_amount"]) }}
+                        </div>
+
+                        <p class="reward-label">
+                            Daily Package Figure
+                        </p>
+
+                        <div class="reward-details">
+                            <span>
+                                PACKAGE VALUE
+                            </span>
+
+                            <strong>
+                                ₦{{ "{:,.2f}".format(active_plan["amount"]) }}
+                            </strong>
+                        </div>
+
+                        <form method="POST"
+                              action="{{ url_for('claim_package_reward', plan_id=active_plan['id']) }}">
+
+                            <button type="submit" class="reward-claim-btn">
+                                Claim Daily Reward
+                                <span>→</span>
+                            </button>
+
+                        </form>
+
+                    </div>
+
+                    {% endfor %}
+
+                {% else %}
+
+                    <div class="no-rewards-card">
+                        <div class="no-rewards-icon">📦</div>
+                        <h3>No Active Packages</h3>
+                        <p>Activate a package to see it here.</p>
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+        </section>
+
+
+
+        <footer class="dashboard-footer">
+            <span>© Blogger</span>
+            <span>Secure Dashboard</span>
+        </footer>
+
+    </main>
+
+</div>
+
+</body>
+</html>

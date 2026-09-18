@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blogger Admin</title>
+
+    <style>
+        body {
+            margin: 0;
+            background: #07140f;
+            color: #fff;
+            font-family: Arial, sans-serif;
+        }
+
+        .header {
+            padding: 20px;
+            background: #10231b;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            margin: 0;
+        }
+
+        .logout {
+            color: #07140f;
+            background: #d4af37;
+            padding: 10px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            padding: 20px;
+        }
+
+        h2 {
+            margin-top: 30px;
+        }
+
+        .card {
+            background: #10231b;
+            border: 1px solid #294a3b;
+            border-radius: 16px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 15px;
+        }
+
+        .label {
+            color: #91aa9e;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .value {
+            font-weight: 600;
+            word-break: break-word;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            background: #705b16;
+            color: #fff2a8;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+            padding-top: 18px;
+            border-top: 1px solid #294a3b;
+        }
+
+        button {
+            border: 0;
+            border-radius: 9px;
+            padding: 11px 18px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .approve {
+            background: #2e9d5b;
+            color: white;
+        }
+
+        .reject {
+            background: #a93636;
+            color: white;
+        }
+
+        .reason {
+            flex: 1;
+            min-width: 220px;
+            padding: 11px;
+            border-radius: 9px;
+            border: 1px solid #3b5c4c;
+            background: #091a13;
+            color: white;
+            box-sizing: border-box;
+        }
+
+        .screenshot {
+            display: inline-block;
+            margin-top: 15px;
+            color: #d4af37;
+        }
+
+        .empty {
+            color: #91aa9e;
+            padding: 15px 0;
+        }
+
+        .flash {
+            padding: 13px 16px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            font-weight: bold;
+        }
+
+        .flash.success {
+            background: #1d5b37;
+        }
+
+        .flash.error {
+            background: #6b2929;
+        }
+
+        @media (max-width: 600px) {
+            .header {
+                gap: 15px;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .reason,
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+    <h1>Blogger Admin</h1>
+    <a class="logout" href="{{ url_for('admin_logout') }}">Logout</a>
+</div>
+
+<div class="container">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+    {% endwith %}
+
+
+    <h2>Pending Deposits</h2>
+
+    {% set pending_deposits = deposits | selectattr("status", "equalto", "Pending") | list %}
+
+    {% if pending_deposits %}
+        {% for deposit in pending_deposits %}
+        <div class="card">
+
+            <div class="row">
+
+                <div>
+                    <div class="label">User</div>
+                    <div class="value">
+                        {{ deposit["fullname"] }}<br>
+                        @{{ deposit["username"] }}
+                    </div>
+                </div>
+
+                <div>
+                    <div class="label">Amount</div>
+                    <div class="value">
+                        ₦{{ "{:,.2f}".format(deposit["amount"]) }}
+                    </div>
+                </div>
+
+                <div>
+                    <div class="label">Payment Method</div>
+                    <div class="value">{{ deposit["payment_method"] }}</div>
+                </div>
+
+                <div>
+                    <div class="label">Payment Name</div>
+                    <div class="value">{{ deposit["payment_name"] }}</div>
+                </div>
+
+                <div>
+                    <div class="label">Submitted</div>
+                    <div class="value">{{ deposit["created_at"] }}</div>
+                </div>
+
+                <div>
+                    <div class="label">Status</div>
+                    <span class="status">Pending</span>
+                </div>
+
+            </div>
+
+            <a
+                class="screenshot"
+                href="{{ url_for('static', filename='uploads/deposits/' + deposit['screenshot']) }}"
+                target="_blank">
+                View Transaction Screenshot →
+            </a>
+
+            <div class="actions">
+
+                <form method="POST"
+                      action="{{ url_for('approve_deposit', deposit_id=deposit['id']) }}">
+                    <button class="approve" type="submit">
+                        ✓ Approve Deposit
+                    </button>
+                </form>
+
+                <form method="POST"
+                      action="{{ url_for('reject_deposit', deposit_id=deposit['id']) }}"
+                      style="display:flex; gap:10px; flex:1; flex-wrap:wrap;">
+
+                    <input
+                        class="reason"
+                        type="text"
+                        name="reason"
+                        placeholder="Reason for rejection"
+                        required>
+
+                    <button class="reject" type="submit">
+                        ✕ Reject Deposit
+                    </button>
+
+                </form>
+
+            </div>
+
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty">No pending deposit requests.</div>
+    {% endif %}
+
+
+    <h2>Pending Withdrawals</h2>
+
+    {% set pending_withdrawals = withdrawals | selectattr("status", "equalto", "Pending") | list %}
+
+    {% if pending_withdrawals %}
+        {% for withdrawal in pending_withdrawals %}
+        <div class="card">
+
+            <div class="row">
+
+                <div>
+                    <div class="label">User</div>
+                    <div class="value">
+                        {{ withdrawal["fullname"] }}<br>
+                        @{{ withdrawal["username"] }}
+                    </div>
+                </div>
+
+                <div>
+                    <div class="label">Amount</div>
+                    <div class="value">
+                        ₦{{ "{:,.2f}".format(withdrawal["amount"]) }}
+                    </div>
+                </div>
+
+                <div>
+                    <div class="label">Bank</div>
+                    <div class="value">{{ withdrawal["bank_name"] }}</div>
+                </div>
+
+                <div>
+                    <div class="label">Account Name</div>
+                    <div class="value">{{ withdrawal["account_name"] }}</div>
+                </div>
+
+                <div>
+                    <div class="label">Account Number</div>
+                    <div class="value">{{ withdrawal["account_number"] }}</div>
+                </div>
+
+                <div>
+                    <div class="label">Submitted</div>
+                    <div class="value">{{ withdrawal["created_at"] }}</div>
+                </div>
+
+            </div>
+
+            <div class="actions">
+
+                <form method="POST"
+                      action="{{ url_for('approve_withdrawal', withdrawal_id=withdrawal['id']) }}">
+                    <button class="approve" type="submit">
+                        ✓ Approve Withdrawal
+                    </button>
+                </form>
+
+                <form method="POST"
+                      action="{{ url_for('reject_withdrawal', withdrawal_id=withdrawal['id']) }}"
+                      style="display:flex; gap:10px; flex:1; flex-wrap:wrap;">
+
+                    <input
+                        class="reason"
+                        type="text"
+                        name="reason"
+                        placeholder="Reason for rejection"
+                        required>
+
+                    <button class="reject" type="submit">
+                        ✕ Reject Withdrawal
+                    </button>
+
+                </form>
+
+            </div>
+
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty">No pending withdrawal requests.</div>
+    {% endif %}
+
+</div>
+
+</body>
+</html>
