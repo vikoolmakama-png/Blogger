@@ -826,9 +826,9 @@ def deposit():
         import uuid
 
         safe_filename = f"{uuid.uuid4().hex}.{extension}"
-        screenshot.save(
-            str(Path(app.root_path) / "static" / "uploads" / "deposits" / safe_filename)
-        )
+        upload_dir = Path(app.root_path) / "static" / "uploads" / "deposits"
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        screenshot.save(str(upload_dir / safe_filename))
 
         db.execute("""
             INSERT INTO deposits
